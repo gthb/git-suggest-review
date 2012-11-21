@@ -1,0 +1,48 @@
+#!/bin/bash
+#
+# Post-commit hook that checks whether somebody else is a primary author for
+# any of the files modified, and suggests a request for review on those files.
+
+SAMENAMES_FILE=${HOME}/.gitsamenames
+SAMENAMES=""
+if [[ -f "${SAMENAMES_FILE}" ]]
+then
+	SAMENAMES=$(cat ${SAMENAMES_FILE})
+fi
+
+cd $(git rev-parse --show-toplevel)
+PRIMARY_AUTHORS=$(git diff-tree -r --name-only --no-commit-id -z HEAD | xargs -0 -n1 -E'\n' -J {} git blame --date short -fwCMcp '{}' | perl -pe 's/^[^ ]* (.*) \((.*) \d{4}-\d{2}-\d{2} +\d+\).*/\2:\1/' | python -c '# encoding=utf-8
+import sys
+from collections import defaultdict
+
+samenames = {'"${SAMENAMES}"'}
+
+Counter = lambda: defaultdict(int)
+
+counters=defaultdict(Counter)
+for line in sys.stdin:
+    if not line.strip():
+        continue
+    author, filename = line.strip().split(":", 1)
+    counters[filename][samenames.get(author, author)] += 1
+
+print "\n".join(
+    "%-25s %s" % (counts[0][0], filename)
+    for filename, counter in counters.iteritems()
+    for counts in (sorted(counter.iteritems(), key=lambda tup: -tup[1]),)
+    if len(counts) == 1
+        or counts[0][1] > 10 and counts[0][1] >= counts[1][1] * 2
+)
+')
+
+ME=$(git config --get user.name)
+PRIMARY_AUTHORS_NOT_ME=$(echo "$PRIMARY_AUTHORS" | grep -v "$ME")
+if [[ -n "$PRIMARY_AUTHORS_NOT_ME" ]]
+then
+	echo "NOTE: Modified files mostly written by others; maybe ask them for code review?"
+	echo
+	echo "Primary author           Filename"
+	echo "--------------           --------"
+	echo "$PRIMARY_AUTHORS_NOT_ME"
+	echo
+fi
