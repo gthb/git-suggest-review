@@ -10,8 +10,9 @@ then
 	SAMENAMES=$(cat ${SAMENAMES_FILE})
 fi
 
+TARGET=${1:-HEAD}
 cd $(git rev-parse --show-toplevel)
-PRIMARY_AUTHORS=$(git diff-tree -r --name-only --no-commit-id -z HEAD | xargs -0 -n1 -E'\n' -J {} git blame --date short -fwCMcp '{}' | perl -pe 's/^[^ ]* (.*) \((.*) \d{4}-\d{2}-\d{2} +\d+\).*/\2:\1/' | python -c '# encoding=utf-8
+PRIMARY_AUTHORS=$(git diff-tree -r --name-only --no-commit-id -z ${TARGET} | xargs -0 -n1 -E'\n' -J {} git blame --date short -fwCMcp '{}' | perl -pe 's/^[^ ]* (.*) \((.*) \d{4}-\d{2}-\d{2} +\d+\).*/\2:\1/' | python -c '# encoding=utf-8
 import sys
 from collections import defaultdict
 
